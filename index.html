@@ -26,7 +26,7 @@ label{display:block;font-size:12px;color:#53645a;font-weight:700;margin:12px 0 5
 </style></head>
 <body>
 <header><div class="top"><div><div class="brand">DRIVER TRACKER</div><div class="sub">inDrive Edition · Catatan pribadi</div></div><div class="date" id="todayDate"></div></div>
-<div class="hero-label">TOTAL UANG DITERIMA HARI INI</div><div class="hero-value" id="heroIncome">Rp0</div><div class="hero-note">Ongkos penumpang + tips customer</div></header>
+<div class="hero-label">PENDAPATAN BERSIH HARI INI</div><div class="hero-value" id="heroIncome">Rp0</div><div class="hero-note">Ongkos + tips − seluruh pengeluaran hari ini</div></header>
 <main>
 <section id="dashboard" class="panel active">
  <div class="section-head"><h2>Ringkasan aktivitas</h2><span class="muted" id="dashRange">Hari ini</span></div>
@@ -45,7 +45,7 @@ label{display:block;font-size:12px;color:#53645a;font-weight:700;margin:12px 0 5
 </section>
 <section id="orders" class="panel">
  <div class="section-head"><h2>Riwayat order</h2></div><div class="actions" style="margin-bottom:12px"><button class="btn" onclick="openOrder(null,'completed')">＋ Order selesai</button><button class="btn danger" onclick="openOrder(null,'cancelled')">＋ Pembatalan</button></div>
- <div class="periods"><button class="period active" data-filter="all">Semua</button><button class="period" data-filter="completed">Selesai</button><button class="period" data-filter="cancelled">Dibatalkan</button><button class="period" data-filter="accepted">Diterima</button></div>
+ <div class="periods"><button class="period active" data-filter="all">Semua</button><button class="period" data-filter="completed">Selesai</button><button class="period" data-filter="cancelled">Dibatalkan</button></div>
  <div class="card" id="orderList"><div class="empty">Belum ada order.</div></div>
 </section>
 <section id="expenses" class="panel">
@@ -55,6 +55,10 @@ label{display:block;font-size:12px;color:#53645a;font-weight:700;margin:12px 0 5
 </section>
 <section id="reports" class="panel">
  <div class="section-head"><h2>Laporan</h2><span class="muted">Ringkasan per periode</span></div>
+ <div class="actions" style="margin:0 0 12px">
+  <button class="btn" onclick="exportXLSX()">Ekspor Excel (.xlsx)</button>
+  <button class="btn secondary" onclick="exportPDF()">Ekspor PDF</button>
+ </div>
  <div class="card" id="reportContent"></div>
  <div class="section-head"><h2>Cadangan data</h2></div><div class="card"><p class="muted">Data tersimpan di perangkat ini. Ekspor cadangan secara berkala agar tidak hilang saat data browser dihapus atau perangkat diganti.</p><div class="actions"><button class="btn" onclick="exportData()">Ekspor data JSON</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Impor data</button><button class="btn ghost" onclick="exportCSV()">Ekspor order CSV</button></div><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(event)"></div>
  <div class="foot">Driver Tracker menyimpan data secara lokal dan tidak terhubung ke sistem inDrive.</div>
@@ -89,7 +93,9 @@ function sum(a,fn){return a.reduce((v,x)=>v+fn(x),0)}
 function render(){
  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
  let todayOrders=db.orders.filter(o=>inPeriod(o.date,'today')&&o.status==='completed');
- document.getElementById('heroIncome').textContent=rupiah(sum(todayOrders,income));
+ let todayGross=sum(todayOrders,income);
+ let todayExpenses=sum(db.expenses.filter(e=>dateOnly(e.date)===today()),e=>e.amount);
+ document.getElementById('heroIncome').textContent=rupiah(todayGross-todayExpenses);
  let periodOrders=db.orders.filter(o=>inPeriod(o.date,dashPeriod)),done=periodOrders.filter(o=>o.status==='completed'),cancel=periodOrders.filter(o=>o.status==='cancelled');
  let fares=sum(done,o=>Number(o.fare)||0),tips=sum(done,o=>Number(o.tips)||0),expenses=sum(db.expenses.filter(e=>inPeriod(e.date,dashPeriod)),e=>e.amount);
  document.getElementById('dashRange').textContent={today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[dashPeriod];
@@ -105,7 +111,7 @@ function render(){
 function orderHTML(o){return `<div class="order"><div class="row"><b>${esc(o.pickup||'Lokasi jemput belum diisi')} → ${esc(o.dropoff||'Lokasi tujuan belum diisi')}</b><span class="pill ${o.status==='completed'?'done':o.status==='cancelled'?'cancel':'accept'}">${statusName(o.status)}</span></div><div class="row muted" style="margin-top:5px"><span>${fmtDate(o.date)}</span><b>${rupiah(income(o))}</b></div><div class="row" style="margin-top:8px"><span class="muted">Ongkos ${rupiah(o.fare)} · Tips ${rupiah(o.tips)}</span><span class="actions"><button class="btn small ghost" onclick="editOrder('${o.id}')">Edit</button><button class="btn small danger" onclick="deleteOrder('${o.id}')">Hapus</button></span></div>${o.note?`<div class="hint">${esc(o.note)}</div>`:''}</div>`}
 function renderOrders(){let arr=[...db.orders].sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(o=>orderFilter==='all'||o.status===orderFilter);document.getElementById('orderList').innerHTML=arr.length?arr.map(orderHTML).join(''):'<div class="empty">Belum ada order untuk filter ini.</div>'}
 function renderExpenses(){let m=db.expenses.filter(e=>inPeriod(e.date,'month'));document.getElementById('expenseMonth').textContent=rupiah(sum(m,e=>e.amount));document.getElementById('expenseCount').textContent=m.length;let arr=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('expenseList').innerHTML=arr.length?arr.map(e=>`<div class="order"><div class="row"><b>${esc(e.category)}</b><b class="red">${rupiah(e.amount)}</b></div><div class="row muted"><span>${e.date} · ${esc(e.note||'')}</span><button class="btn small danger" onclick="deleteExpense('${e.id}')">Hapus</button></div></div>`).join(''):'<div class="empty">Belum ada pengeluaran.</div>'}
-function renderReports(){let html='';for(let p of ['today','week','month']){let os=db.orders.filter(o=>inPeriod(o.date,p)&&o.status==='completed'),ex=sum(db.expenses.filter(e=>inPeriod(e.date,p)),e=>e.amount),fare=sum(os,o=>Number(o.fare)||0),tip=sum(os,o=>Number(o.tips)||0);html+=`<div class="order"><b>${{today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[p]}</b><div class="row muted"><span>${os.length} order selesai</span><span>Ongkos ${rupiah(fare)}</span></div><div class="row muted"><span>Tips ${rupiah(tip)}</span><span>Biaya ${rupiah(ex)}</span></div><div class="row" style="margin-top:6px"><span>Total diterima</span><b class="green">${rupiah(fare+tip)}</b></div><div class="row"><span>Sisa setelah biaya</span><b>${rupiah(fare+tip-ex)}</b></div></div>`}document.getElementById('reportContent').innerHTML=html}
+function renderReports(){let html='';for(let p of ['today','week','month']){let os=db.orders.filter(o=>inPeriod(o.date,p)&&o.status==='completed'),ex=sum(db.expenses.filter(e=>inPeriod(e.date,p)),e=>e.amount),fare=sum(os,o=>Number(o.fare)||0),tip=sum(os,o=>Number(o.tips)||0);html+=`<div class="order"><b>${{today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[p]}</b><div class="row muted"><span>${os.length} order selesai</span><span>Ongkos ${rupiah(fare)}</span></div><div class="row muted"><span>Tips ${rupiah(tip)}</span><span>Pengeluaran ${rupiah(ex)}</span></div><div class="row" style="margin-top:6px"><span>Total pemasukan</span><b class="green">${rupiah(fare+tip)}</b></div><div class="row"><span>Pendapatan bersih</span><b>${rupiah(fare+tip-ex)}</b></div></div>`}document.getElementById('reportContent').innerHTML=html}
 function switchTab(id){document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='orders')renderOrders()}
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
 document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{dashPeriod=b.dataset.period;document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===b));render()});
@@ -134,6 +140,65 @@ function closeModal(id){document.getElementById(id).classList.remove('show')}
 function exportData(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});download(blob,'driver-tracker-backup.json')}
 function exportCSV(){let rows=[['Tanggal','Status','Penjemputan','Pengantaran','Ongkos','Uang diterima','Tips','Pembayaran','Catatan'],...db.orders.map(o=>[o.date,o.status,o.pickup,o.dropoff,o.fare,o.received,o.tips,o.payment,o.note])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');download(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'driver-tracker-orders.csv')}
 function download(blob,name){let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+function exportXLSX(){
+ const escXml=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+ const col=n=>{let s='';while(n){let r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26)}return s};
+ function sheet(rows){let out=rows.map((row,ri)=>'<row r="'+(ri+1)+'">'+row.map((v,ci)=>{let ref=col(ci+1)+(ri+1);if(typeof v==='number'&&Number.isFinite(v))return '<c r="'+ref+'" t="n"'+(ri===0?' s="1"':'')+'><v>'+v+'</v></c>';return '<c r="'+ref+'" t="inlineStr"'+(ri===0?' s="1"':'')+'><is><t>'+escXml(v)+'</t></is></c>'}).join('')+'</row>').join('');
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+out+'</sheetData></worksheet>';
+ }
+ const orders=[['Tanggal & Waktu','Status','Penjemputan','Pengantaran','Ongkos (Rp)','Tips (Rp)','Total diterima (Rp)','Pembayaran'],
+ ...[...db.orders].sort((a,b)=>new Date(a.date)-new Date(b.date)).map(o=>[String(o.date||''),statusName(o.status),o.pickup||'',o.dropoff||'',Number(o.fare)||0,Number(o.tips)||0,income(o),o.payment||''])];
+ const expenses=[['Tanggal','Kategori','Nominal (Rp)','Catatan'],
+ ...[...db.expenses].sort((a,b)=>String(a.date).localeCompare(String(b.date))).map(e=>[String(e.date||''),e.category||'',Number(e.amount)||0,e.note||''])];
+ const sumRows=[['Periode','Order selesai','Total ongkos (Rp)','Total tips (Rp)','Total pemasukan (Rp)','Pengeluaran (Rp)','Pendapatan bersih (Rp)']];
+ for(const p of ['today','week','month']){let os=db.orders.filter(o=>inPeriod(o.date,p)&&o.status==='completed'),ex=sum(db.expenses.filter(e=>inPeriod(e.date,p)),e=>Number(e.amount)||0),f=sum(os,o=>Number(o.fare)||0),t=sum(os,o=>Number(o.tips)||0);sumRows.push([{today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[p],os.length,f,t,f+t,ex,f+t-ex])}
+ const files={
+ '[Content_Types].xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+[1,2,3].map(i=>'<Override PartName="/xl/worksheets/sheet'+i+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')+'</Types>',
+ '_rels/.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+ 'xl/workbook.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Ringkasan" sheetId="1" r:id="rId1"/><sheet name="Riwayat Order" sheetId="2" r:id="rId2"/><sheet name="Pengeluaran" sheetId="3" r:id="rId3"/></sheets></workbook>',
+ 'xl/_rels/workbook.xml.rels':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+[1,2,3].map(i=>'<Relationship Id="rId'+i+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet'+i+'.xml"/>').join('')+'<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
+ 'xl/styles.xml':'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF174C36"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>',
+ 'xl/worksheets/sheet1.xml':sheet(sumRows),
+ 'xl/worksheets/sheet2.xml':sheet(orders),
+ 'xl/worksheets/sheet3.xml':sheet(expenses)
+ };
+ // Minimal ZIP writer using uncompressed entries (valid OpenXML package)
+ const crcTable=(()=>{let c,t=[];for(let n=0;n<256;n++){c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+ const crc32=a=>{let c=0xffffffff;for(let b of a)c=crcTable[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0};
+ const enc=new TextEncoder(),parts=[],central=[];let offset=0;
+ const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+ for(const [name,content] of Object.entries(files)){let nb=enc.encode(name),data=enc.encode(content),crc=crc32(data);
+  let local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0),...nb,...data]);parts.push(local);
+  central.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...nb]));
+  offset+=local.length;
+ }
+ let csize=central.reduce((a,b)=>a+b.length,0),count=central.length;
+ let end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(count),...u16(count),...u32(csize),...u32(offset),...u16(0)]);
+ const blob=new Blob([...parts,...central,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+ download(blob,'driver-tracker-laporan.xlsx');
+}
+function exportPDF(){
+ const money=n=>'Rp '+Math.round(Number(n)||0).toLocaleString('id-ID');
+ const rows=db.orders.slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+ const exp=db.expenses.slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ const todayOrders=db.orders.filter(o=>inPeriod(o.date,'today')&&o.status==='completed');
+ const todayGross=sum(todayOrders,income),todayExp=sum(db.expenses.filter(e=>dateOnly(e.date)===today()),e=>e.amount);
+ const escH=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const periodRows=['today','week','month'].map(p=>{let os=db.orders.filter(o=>inPeriod(o.date,p)&&o.status==='completed'),ex=sum(db.expenses.filter(e=>inPeriod(e.date,p)),e=>e.amount),f=sum(os,o=>Number(o.fare)||0),t=sum(os,o=>Number(o.tips)||0);return `<tr><td>${{today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[p]}</td><td>${os.length}</td><td>${money(f+t)}</td><td>${money(ex)}</td><td><b>${money(f+t-ex)}</b></td></tr>`}).join('');
+ const orderRows=rows.map(o=>`<tr><td>${escH(o.date)}</td><td>${escH(statusName(o.status))}</td><td>${escH(o.pickup||'-')}</td><td>${escH(o.dropoff||'-')}</td><td>${money(income(o))}</td></tr>`).join('');
+ const expenseRows=exp.map(e=>`<tr><td>${escH(e.date)}</td><td>${escH(e.category)}</td><td>${escH(e.note||'-')}</td><td>${money(e.amount)}</td></tr>`).join('');
+ const w=window.open('','_blank');if(!w){alert('Izinkan pop-up browser untuk membuat PDF.');return}
+ w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Laporan Driver Tracker</title><style>
+ @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font:11px Arial,sans-serif;color:#202a25;margin:0}h1{font-size:22px;margin:0;color:#174c36}h2{font-size:14px;margin:22px 0 8px;color:#174c36}.muted{color:#68756e}.head{border-bottom:3px solid #174c36;padding-bottom:12px;margin-bottom:16px}.summary{display:flex;gap:10px;margin:14px 0}.tile{border:1px solid #dce5df;border-radius:7px;padding:10px;flex:1}.tile strong{display:block;font-size:16px;margin-top:5px;color:#174c36}table{width:100%;border-collapse:collapse;margin:8px 0 16px}th{background:#174c36;color:white;text-align:left}th,td{padding:7px;border:1px solid #dce5df;vertical-align:top}tr:nth-child(even) td{background:#f5f8f6}.right{text-align:right}.foot{margin-top:24px;border-top:1px solid #ddd;padding-top:8px;color:#68756e}@media print{.noprint{display:none}}
+ </style></head><body><div class="head"><h1>DRIVER TRACKER</h1><div class="muted">Laporan aktivitas dan keuangan driver · Dicetak ${new Date().toLocaleString('id-ID')}</div></div>
+ <div class="summary"><div class="tile">Pendapatan bersih hari ini<strong>${money(todayGross-todayExp)}</strong></div><div class="tile">Total pemasukan hari ini<strong>${money(todayGross)}</strong></div><div class="tile">Pengeluaran hari ini<strong>${money(todayExp)}</strong></div></div>
+ <h2>Ringkasan Periode</h2><table><thead><tr><th>Periode</th><th>Order</th><th>Pemasukan</th><th>Pengeluaran</th><th>Pendapatan bersih</th></tr></thead><tbody>${periodRows}</tbody></table>
+ <h2>Riwayat Order</h2><table><thead><tr><th>Tanggal</th><th>Status</th><th>Penjemputan</th><th>Pengantaran</th><th>Total diterima</th></tr></thead><tbody>${orderRows||'<tr><td colspan="5">Belum ada data order.</td></tr>'}</tbody></table>
+ <h2>Riwayat Pengeluaran</h2><table><thead><tr><th>Tanggal</th><th>Kategori</th><th>Catatan</th><th>Nominal</th></tr></thead><tbody>${expenseRows||'<tr><td colspan="4">Belum ada data pengeluaran.</td></tr>'}</tbody></table>
+ <div class="foot">Dokumen dibuat melalui Driver Tracker. Data tersimpan secara lokal pada perangkat.</div><div class="noprint" style="margin-top:18px"><button onclick="window.print()">Cetak / Simpan sebagai PDF</button></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+ w.document.close();
+}
 function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.orders)||!Array.isArray(x.expenses))throw Error();if(confirm('Ganti seluruh data saat ini dengan data cadangan?')){db=x;save();alert('Data berhasil diimpor.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''};r.readAsText(f)}
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();
