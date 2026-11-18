@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10271f"><meta name="description" content="Pencatat order, pendapatan, tips, pengeluaran dan tingkat pembatalan driver.">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Driver Tracker</title>
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--ink:#17231d;--muted:#718078;--green:#137a4b;--green2:#e5f4eb;--red:#d94b4b;--amber:#d58a19;--line:#e5ebe7;--nav:#10271f;--shadow:0 8px 24px #1837290d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:88px}
+header{background:linear-gradient(135deg,#10271f,#1d4936);color:white;padding:22px 18px 25px;border-radius:0 0 25px 25px}
+.top{display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;letter-spacing:.8px;font-size:18px}.sub{color:#c0d5c9;font-size:12px}.date{font-size:12px;color:#c0d5c9}
+.hero-label{margin-top:25px;color:#c0d5c9;font-size:11px;letter-spacing:1px}.hero-value{font-size:31px;font-weight:850;margin:3px 0}.hero-note{font-size:12px;color:#c0d5c9}
+main{max-width:760px;margin:auto;padding:15px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px}.section-head h2{font-size:16px;margin:0}.muted{color:var(--muted);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:14px;box-shadow:var(--shadow)}
+.stat-label{font-size:12px;color:var(--muted)}.stat-value{font-weight:800;font-size:21px;margin-top:5px}.green{color:var(--green)}.red{color:var(--red)}.amber{color:var(--amber)}
+.wide{grid-column:1/-1}.progress{height:9px;background:#edf1ee;border-radius:20px;overflow:hidden;margin:10px 0 6px}.progress span{display:block;height:100%;background:var(--green);border-radius:20px}
+.btn{border:0;border-radius:12px;padding:12px 15px;font-weight:750;background:var(--green);color:#fff;cursor:pointer}.btn.secondary{background:#e8f1eb;color:var(--green)}.btn.ghost{background:#f1f4f2;color:#34463c}.btn.danger{background:#fff0f0;color:var(--red)}.btn.small{padding:8px 11px;font-size:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.periods{display:flex;gap:7px;overflow:auto;margin:10px 0}.period{white-space:nowrap;border:1px solid var(--line);background:white;color:var(--muted);border-radius:30px;padding:8px 13px;font-size:12px}.period.active{background:var(--nav);color:#fff;border-color:var(--nav)}
+.panel{display:none}.panel.active{display:block}.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:5}.tab{border:0;background:none;color:#839087;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:58px}.tab b{font-size:19px;font-weight:500}.tab.active{color:var(--green);font-weight:800}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:center}.order{padding:13px 0;border-bottom:1px solid var(--line)}.order:last-child{border:0}.pill{display:inline-block;border-radius:20px;padding:4px 8px;font-size:10px;font-weight:750}.pill.done{background:#e4f4e9;color:#137a4b}.pill.cancel{background:#fff0f0;color:#c33}.pill.accept{background:#fff5df;color:#98620d}
+label{display:block;font-size:12px;color:#53645a;font-weight:700;margin:12px 0 5px}input,select,textarea{width:100%;border:1px solid #dce5df;background:#fff;border-radius:11px;padding:12px;font:inherit;color:var(--ink);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--green)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.modal{position:fixed;inset:0;background:#091b13a8;display:none;z-index:10;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{background:var(--bg);width:100%;max-width:650px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px 30px}.sheet h2{margin:0 0 8px}.close{float:right;border:0;background:#e7ede9;border-radius:50%;width:32px;height:32px;font-size:18px}.empty{text-align:center;color:var(--muted);padding:28px 10px}.barline{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.barline .track{height:8px;flex:1;background:#edf1ee;border-radius:10px;overflow:hidden}.barline .track i{display:block;height:100%;background:var(--green)}
+.hidden{display:none!important}.hint{font-size:11px;color:var(--muted);margin-top:6px}.foot{font-size:11px;color:var(--muted);text-align:center;padding:20px}
+@media(min-width:600px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.sheet{border-radius:22px;margin:auto}.modal{align-items:center;padding:18px}.wide{grid-column:span 2}}
+</style></head>
+<body>
+<header><div class="top"><div><div class="brand">DRIVER TRACKER</div><div class="sub">inDrive Edition · Catatan pribadi</div></div><div class="date" id="todayDate"></div></div>
+<div class="hero-label">TOTAL UANG DITERIMA HARI INI</div><div class="hero-value" id="heroIncome">Rp0</div><div class="hero-note">Ongkos penumpang + tips customer</div></header>
+<main>
+<section id="dashboard" class="panel active">
+ <div class="section-head"><h2>Ringkasan aktivitas</h2><span class="muted" id="dashRange">Hari ini</span></div>
+ <div class="periods" id="dashPeriods"><button class="period active" data-period="today">Hari ini</button><button class="period" data-period="week">Minggu ini</button><button class="period" data-period="month">Bulan ini</button></div>
+ <div class="grid">
+  <div class="card"><div class="stat-label">Order selesai</div><div class="stat-value" id="statDone">0</div></div>
+  <div class="card"><div class="stat-label">Order dibatalkan</div><div class="stat-value red" id="statCancel">0</div></div>
+  <div class="card"><div class="stat-label">Ongkos diterima</div><div class="stat-value green" id="statFare">Rp0</div></div>
+  <div class="card"><div class="stat-label">Tips customer</div><div class="stat-value green" id="statTips">Rp0</div></div>
+  <div class="card wide"><div class="stat-label">Total pemasukan (tanpa potongan komisi)</div><div class="stat-value green" id="statIncome">Rp0</div><div class="muted" id="statExpenses">Pengeluaran: Rp0</div><div class="muted" id="statNet">Sisa setelah pengeluaran: Rp0</div></div>
+ </div>
+ <div class="section-head"><h2>Tingkat pembatalan</h2><span class="pill done" id="cancelBadge">Di bawah 6%</span></div>
+ <div class="card"><div class="row"><div><div class="stat-label">100 order terakhir yang tercatat</div><div class="stat-value" id="cancelRate">0,00%</div></div><div style="text-align:right"><div class="stat-label">Target</div><b>&lt; 6%</b></div></div><div class="progress"><span id="cancelProgress" style="width:0%"></span></div><div class="muted" id="cancelDetail">0 batal dari 0 order selesai/batal</div><div class="hint" id="cancelAdvice">Catat order secara konsisten untuk memantau progres.</div></div>
+ <div class="section-head"><h2>Order terbaru</h2><button class="btn small secondary" onclick="switchTab('orders')">Lihat semua</button></div>
+ <div class="card" id="recentOrders"><div class="empty">Belum ada order dicatat.</div></div>
+</section>
+<section id="orders" class="panel">
+ <div class="section-head"><h2>Riwayat order</h2></div><div class="actions" style="margin-bottom:12px"><button class="btn" onclick="openOrder(null,'completed')">＋ Order selesai</button><button class="btn danger" onclick="openOrder(null,'cancelled')">＋ Pembatalan</button></div>
+ <div class="periods"><button class="period active" data-filter="all">Semua</button><button class="period" data-filter="completed">Selesai</button><button class="period" data-filter="cancelled">Dibatalkan</button><button class="period" data-filter="accepted">Diterima</button></div>
+ <div class="card" id="orderList"><div class="empty">Belum ada order.</div></div>
+</section>
+<section id="expenses" class="panel">
+ <div class="section-head"><h2>Pengeluaran operasional</h2><button class="btn small" onclick="openExpense()">＋ Tambah</button></div>
+ <div class="grid"><div class="card"><div class="stat-label">Total pengeluaran bulan ini</div><div class="stat-value red" id="expenseMonth">Rp0</div></div><div class="card"><div class="stat-label">Jumlah catatan</div><div class="stat-value" id="expenseCount">0</div></div></div>
+ <div class="section-head"><h2>Riwayat pengeluaran</h2></div><div class="card" id="expenseList"><div class="empty">Belum ada pengeluaran.</div></div>
+</section>
+<section id="reports" class="panel">
+ <div class="section-head"><h2>Laporan</h2><span class="muted">Ringkasan per periode</span></div>
+ <div class="card" id="reportContent"></div>
+ <div class="section-head"><h2>Cadangan data</h2></div><div class="card"><p class="muted">Data tersimpan di perangkat ini. Ekspor cadangan secara berkala agar tidak hilang saat data browser dihapus atau perangkat diganti.</p><div class="actions"><button class="btn" onclick="exportData()">Ekspor data JSON</button><button class="btn secondary" onclick="document.getElementById('importFile').click()">Impor data</button><button class="btn ghost" onclick="exportCSV()">Ekspor order CSV</button></div><input id="importFile" type="file" accept="application/json" class="hidden" onchange="importData(event)"></div>
+ <div class="foot">Driver Tracker menyimpan data secara lokal dan tidak terhubung ke sistem inDrive.</div>
+</section>
+</main>
+<nav class="tabs"><button class="tab active" data-tab="dashboard"><b>⌂</b>Dashboard</button><button class="tab" data-tab="orders"><b>▤</b>Order</button><button class="tab" data-tab="expenses"><b>＋</b>Biaya</button><button class="tab" data-tab="reports"><b>▥</b>Laporan</button></nav>
+<div class="modal" id="orderModal"><div class="sheet"><button class="close" onclick="closeModal('orderModal')">×</button><h2 id="orderTitle">Tambah order</h2><form id="orderForm">
+<input type="hidden" id="orderId">
+<label>Tanggal & waktu</label><input type="datetime-local" id="orderDate" required>
+<input type="hidden" id="orderStatus" value="completed">
+<div class="formgrid"><div><label>Titik penjemputan</label><input id="pickup" placeholder="Lokasi jemput"></div><div><label>Titik pengantaran</label><input id="dropoff" placeholder="Lokasi tujuan"></div></div>
+<div id="incomeFields"><label>Tarif / ongkos penumpang (Rp)</label><input type="number" min="0" id="fare" placeholder="0">
+<div class="formgrid"><div><label>Tips customer (Rp)</label><input type="number" min="0" id="tips" value="0"></div><div><label>Pembayaran</label><select id="payment"><option>Tunai</option><option>Transfer</option><option>E-wallet</option><option>Lainnya</option></select></div></div></div>
+<p class="hint">Pemasukan dihitung dari tarif/ongkos penumpang + tips. Tidak ada potongan komisi otomatis. Pembatalan hanya dicatat sebagai jumlah order batal.</p>
+<div class="actions" style="margin-top:16px"><button class="btn" type="submit">Simpan order</button><button class="btn ghost" type="button" onclick="closeModal('orderModal')">Batal</button></div></form></div></div>
+<div class="modal" id="expenseModal"><div class="sheet"><button class="close" onclick="closeModal('expenseModal')">×</button><h2>Tambah pengeluaran</h2><form id="expenseForm"><input type="hidden" id="expenseId"><label>Tanggal</label><input type="date" id="expenseDate" required><label>Kategori</label><select id="expenseCategory"><option>Bensin</option><option>Konsumsi</option><option>Service</option><option>Sedekah</option></select><label>Nominal (Rp)</label><input type="number" min="1" id="expenseAmount" required><label>Catatan</label><input id="expenseNote" placeholder="Opsional"><div class="actions" style="margin-top:16px"><button class="btn" type="submit">Simpan pengeluaran</button><button class="btn ghost" type="button" onclick="closeModal('expenseModal')">Batal</button></div></form></div></div>
+<script>
+const KEY='driverTrackerDataV1';let db=load();let dashPeriod='today',orderFilter='all';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{orders:[],expenses:[]}}catch(e){return{orders:[],expenses:[]}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+const rupiah=n=>'Rp'+Math.round(Number(n)||0).toLocaleString('id-ID');
+const num=id=>Number(document.getElementById(id).value)||0;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function dateOnly(s){return String(s).slice(0,10)}
+function today(){return dateOnly(new Date())}
+function monday(d){let x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+function inPeriod(s,p){let d=new Date(s),n=new Date();if(p==='today')return dateOnly(d)===today();if(p==='week')return d>=monday(n)&&d<=n;if(p==='month')return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth();return true}
+function fmtDate(s){return new Date(s).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}
+function statusName(s){return s==='completed'?'Selesai':s==='cancelled'?'Dibatalkan':'Diterima'}
+function income(o){return o.status==='completed'?(Number(o.fare)||0)+(Number(o.tips)||0):0}
+function sum(a,fn){return a.reduce((v,x)=>v+fn(x),0)}
+function render(){
+ document.getElementById('todayDate').textContent=new Date().toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+ let todayOrders=db.orders.filter(o=>inPeriod(o.date,'today')&&o.status==='completed');
+ document.getElementById('heroIncome').textContent=rupiah(sum(todayOrders,income));
+ let periodOrders=db.orders.filter(o=>inPeriod(o.date,dashPeriod)),done=periodOrders.filter(o=>o.status==='completed'),cancel=periodOrders.filter(o=>o.status==='cancelled');
+ let fares=sum(done,o=>Number(o.fare)||0),tips=sum(done,o=>Number(o.tips)||0),expenses=sum(db.expenses.filter(e=>inPeriod(e.date,dashPeriod)),e=>e.amount);
+ document.getElementById('dashRange').textContent={today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[dashPeriod];
+ document.getElementById('statDone').textContent=done.length;document.getElementById('statCancel').textContent=cancel.length;document.getElementById('statFare').textContent=rupiah(fares);document.getElementById('statTips').textContent=rupiah(tips);document.getElementById('statIncome').textContent=rupiah(fares+tips);document.getElementById('statExpenses').textContent='Pengeluaran: '+rupiah(expenses);document.getElementById('statNet').textContent='Sisa setelah pengeluaran: '+rupiah(fares+tips-expenses);
+ let last=db.orders.filter(o=>o.status==='completed'||o.status==='cancelled').sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,100),lc=last.filter(o=>o.status==='cancelled').length,ld=last.length-lc,rate=last.length?lc/last.length*100:0;
+ let extra=0;while(last.length&&((lc/(last.length+extra+1))*100)>=6&&extra<10000)extra++;
+ document.getElementById('cancelRate').textContent=rate.toFixed(2).replace('.',',')+'%';document.getElementById('cancelProgress').style.width=Math.min(100,rate/6*100)+'%';document.getElementById('cancelDetail').textContent=`${lc} batal dari ${last.length} order selesai/batal (maks. 100 terakhir)`;
+ document.getElementById('cancelBadge').textContent=last.length===0?'Belum ada data':rate<6?'Di bawah 6%':'Perlu diturunkan';document.getElementById('cancelBadge').className='pill '+(rate<6?'done':'cancel');
+ document.getElementById('cancelAdvice').textContent=last.length? (rate<6?'Pertahankan: hindari pembatalan berikutnya.':'Perkiraan perlu '+extra+' order selesai berturut-turut tanpa pembatalan agar di bawah 6%.'):'Catat order selesai atau batal untuk mulai menghitung.';
+ let recent=[...db.orders].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,4);document.getElementById('recentOrders').innerHTML=recent.length?recent.map(orderHTML).join(''):'<div class="empty">Belum ada order dicatat.</div>';
+ renderOrders();renderExpenses();renderReports();
+}
+function orderHTML(o){return `<div class="order"><div class="row"><b>${esc(o.pickup||'Lokasi jemput belum diisi')} → ${esc(o.dropoff||'Lokasi tujuan belum diisi')}</b><span class="pill ${o.status==='completed'?'done':o.status==='cancelled'?'cancel':'accept'}">${statusName(o.status)}</span></div><div class="row muted" style="margin-top:5px"><span>${fmtDate(o.date)}</span><b>${rupiah(income(o))}</b></div><div class="row" style="margin-top:8px"><span class="muted">Ongkos ${rupiah(o.fare)} · Tips ${rupiah(o.tips)}</span><span class="actions"><button class="btn small ghost" onclick="editOrder('${o.id}')">Edit</button><button class="btn small danger" onclick="deleteOrder('${o.id}')">Hapus</button></span></div>${o.note?`<div class="hint">${esc(o.note)}</div>`:''}</div>`}
+function renderOrders(){let arr=[...db.orders].sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(o=>orderFilter==='all'||o.status===orderFilter);document.getElementById('orderList').innerHTML=arr.length?arr.map(orderHTML).join(''):'<div class="empty">Belum ada order untuk filter ini.</div>'}
+function renderExpenses(){let m=db.expenses.filter(e=>inPeriod(e.date,'month'));document.getElementById('expenseMonth').textContent=rupiah(sum(m,e=>e.amount));document.getElementById('expenseCount').textContent=m.length;let arr=[...db.expenses].sort((a,b)=>b.date.localeCompare(a.date));document.getElementById('expenseList').innerHTML=arr.length?arr.map(e=>`<div class="order"><div class="row"><b>${esc(e.category)}</b><b class="red">${rupiah(e.amount)}</b></div><div class="row muted"><span>${e.date} · ${esc(e.note||'')}</span><button class="btn small danger" onclick="deleteExpense('${e.id}')">Hapus</button></div></div>`).join(''):'<div class="empty">Belum ada pengeluaran.</div>'}
+function renderReports(){let html='';for(let p of ['today','week','month']){let os=db.orders.filter(o=>inPeriod(o.date,p)&&o.status==='completed'),ex=sum(db.expenses.filter(e=>inPeriod(e.date,p)),e=>e.amount),fare=sum(os,o=>Number(o.fare)||0),tip=sum(os,o=>Number(o.tips)||0);html+=`<div class="order"><b>${{today:'Hari ini',week:'Minggu ini',month:'Bulan ini'}[p]}</b><div class="row muted"><span>${os.length} order selesai</span><span>Ongkos ${rupiah(fare)}</span></div><div class="row muted"><span>Tips ${rupiah(tip)}</span><span>Biaya ${rupiah(ex)}</span></div><div class="row" style="margin-top:6px"><span>Total diterima</span><b class="green">${rupiah(fare+tip)}</b></div><div class="row"><span>Sisa setelah biaya</span><b>${rupiah(fare+tip-ex)}</b></div></div>`}document.getElementById('reportContent').innerHTML=html}
+function switchTab(id){document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='orders')renderOrders()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));
+document.querySelectorAll('[data-period]').forEach(b=>b.onclick=()=>{dashPeriod=b.dataset.period;document.querySelectorAll('[data-period]').forEach(x=>x.classList.toggle('active',x===b));render()});
+document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{orderFilter=b.dataset.filter;document.querySelectorAll('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));renderOrders()});
+function openOrder(o,forcedStatus='completed'){
+ document.getElementById('orderForm').reset();
+ document.getElementById('orderId').value=o?.id||'';
+ document.getElementById('orderTitle').textContent=o?'Edit catatan order':(forcedStatus==='cancelled'?'Catat pembatalan':'Catat order selesai');
+ document.getElementById('orderDate').value=o?o.date.slice(0,16):new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+ document.getElementById('orderStatus').value=o?.status||forcedStatus;
+ document.getElementById('pickup').value=o?.pickup||'';
+ document.getElementById('dropoff').value=o?.dropoff||'';
+ document.getElementById('fare').value=o?.fare??'';
+ document.getElementById('tips').value=o?.tips??0;
+ document.getElementById('payment').value=o?.payment||'Tunai';
+ document.getElementById('incomeFields').classList.toggle('hidden',(o?.status||forcedStatus)==='cancelled');
+ document.getElementById('orderModal').classList.add('show');
+}
+function editOrder(id){let o=db.orders.find(x=>x.id===id);if(o)openOrder(o)}
+function deleteOrder(id){if(confirm('Hapus catatan order ini?')){db.orders=db.orders.filter(x=>x.id!==id);save()}}
+document.getElementById('orderForm').onsubmit=e=>{e.preventDefault();let id=document.getElementById('orderId').value;let status=document.getElementById('orderStatus').value;let o={id:id||crypto.randomUUID(),date:document.getElementById('orderDate').value,status:status,pickup:document.getElementById('pickup').value,dropoff:document.getElementById('dropoff').value,fare:status==='completed'?num('fare'):0,tips:status==='completed'?num('tips'):0,payment:document.getElementById('payment').value};if(id)db.orders=db.orders.map(x=>x.id===id?o:x);else db.orders.push(o);closeModal('orderModal');save()};
+function openExpense(){document.getElementById('expenseForm').reset();document.getElementById('expenseId').value='';document.getElementById('expenseDate').value=today();document.getElementById('expenseModal').classList.add('show')}
+document.getElementById('expenseForm').onsubmit=e=>{e.preventDefault();db.expenses.push({id:crypto.randomUUID(),date:document.getElementById('expenseDate').value,category:document.getElementById('expenseCategory').value,amount:num('expenseAmount'),note:document.getElementById('expenseNote').value});closeModal('expenseModal');save()};
+function deleteExpense(id){if(confirm('Hapus pengeluaran ini?')){db.expenses=db.expenses.filter(x=>x.id!==id);save()}}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function exportData(){let blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});download(blob,'driver-tracker-backup.json')}
+function exportCSV(){let rows=[['Tanggal','Status','Penjemputan','Pengantaran','Ongkos','Uang diterima','Tips','Pembayaran','Catatan'],...db.orders.map(o=>[o.date,o.status,o.pickup,o.dropoff,o.fare,o.received,o.tips,o.payment,o.note])];let csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');download(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}),'driver-tracker-orders.csv')}
+function download(blob,name){let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href)}
+function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.orders)||!Array.isArray(x.expenses))throw Error();if(confirm('Ganti seluruh data saat ini dengan data cadangan?')){db=x;save();alert('Data berhasil diimpor.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''};r.readAsText(f)}
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+render();
+</script></body></html>
