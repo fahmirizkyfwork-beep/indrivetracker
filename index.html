@@ -9,8 +9,8 @@
 :root{--bg:#f3f6f4;--card:#fff;--ink:#17231d;--muted:#718078;--green:#137a4b;--green2:#e5f4eb;--red:#d94b4b;--amber:#d58a19;--line:#e5ebe7;--nav:#10271f;--shadow:0 8px 24px #1837290d}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:88px}
 header{background:linear-gradient(135deg,#10271f,#1d4936);color:white;padding:22px 18px 25px;border-radius:0 0 25px 25px}
-.top{display:flex;justify-content:space-between;align-items:center}.brand{font-weight:850;letter-spacing:.8px;font-size:18px}.sub{color:#c0d5c9;font-size:12px}.date{font-size:12px;color:#c0d5c9}
-.hero-label{margin-top:25px;color:#c0d5c9;font-size:11px;letter-spacing:1px}.hero-value{font-size:31px;font-weight:850;margin:3px 0}.hero-note{font-size:12px;color:#c0d5c9}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px}.datebox{text-align:right;flex-shrink:0}.clock{font-size:20px;font-weight:850;letter-spacing:1px;color:#fff;font-variant-numeric:tabular-nums}.brand{font-weight:850;letter-spacing:.8px;font-size:18px}.sub{color:#c0d5c9;font-size:12px}.date{font-size:12px;color:#c0d5c9}
+.weather{margin-top:18px;padding:11px 13px;border:1px solid #ffffff24;background:#ffffff12;border-radius:14px}.weather-main{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:800}.weather-main #weatherIcon{font-size:25px}.weather-detail,.weather-location{font-size:11px;color:#c0d5c9;margin-top:3px}.hero-label{margin-top:18px;color:#c0d5c9;font-size:11px;letter-spacing:1px}.hero-value{font-size:31px;font-weight:850;margin:3px 0}.hero-note{font-size:12px;color:#c0d5c9}
 main{max-width:760px;margin:auto;padding:15px}
 .section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px}.section-head h2{font-size:16px;margin:0}.muted{color:var(--muted);font-size:12px}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:14px;box-shadow:var(--shadow)}
@@ -23,10 +23,10 @@ main{max-width:760px;margin:auto;padding:15px}
 label{display:block;font-size:12px;color:#53645a;font-weight:700;margin:12px 0 5px}input,select,textarea{width:100%;border:1px solid #dce5df;background:#fff;border-radius:11px;padding:12px;font:inherit;color:var(--ink);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--green)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.modal{position:fixed;inset:0;background:#091b13a8;display:none;z-index:10;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{background:var(--bg);width:100%;max-width:650px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 18px 30px}.sheet h2{margin:0 0 8px}.close{float:right;border:0;background:#e7ede9;border-radius:50%;width:32px;height:32px;font-size:18px}.empty{text-align:center;color:var(--muted);padding:28px 10px}.barline{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px}.barline .track{height:8px;flex:1;background:#edf1ee;border-radius:10px;overflow:hidden}.barline .track i{display:block;height:100%;background:var(--green)}
 .hidden{display:none!important}.hint{font-size:11px;color:var(--muted);margin-top:6px}.foot{font-size:11px;color:var(--muted);text-align:center;padding:20px}
 @media(min-width:600px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.sheet{border-radius:22px;margin:auto}.modal{align-items:center;padding:18px}.wide{grid-column:span 2}}
-</style></head>
+@media(max-width:420px){.brand{font-size:15px}.clock{font-size:17px}.sub{font-size:11px}.date{font-size:10px}}\n</style></head>
 <body>
-<header><div class="top"><div><div class="brand">DRIVER TRACKER</div><div class="sub">inDrive Edition · Catatan pribadi</div></div><div class="date" id="todayDate"></div></div>
-<div class="hero-label">PENDAPATAN BERSIH HARI INI</div><div class="hero-value" id="heroIncome">Rp0</div><div class="hero-note" id="heroNetNote">Total pemasukan dikurangi seluruh pengeluaran hari ini</div></header>
+<header><div class="top"><div><div class="brand">DRIVER TRACKER</div><div class="sub">inDrive Edition by Fahmi Rizky Fauzi</div></div><div class="datebox"><div class="clock" id="liveClock">--:--:--</div><div class="date" id="todayDate"></div></div></div>
+<div class="weather" id="weatherBox"><div class="weather-main"><span id="weatherIcon">⛅</span><span id="weatherTemp">Memuat cuaca…</span></div><div class="weather-detail" id="weatherDetail">Mengambil lokasi untuk prakiraan cuaca real time</div><div class="weather-location" id="weatherLocation"></div></div><div class="hero-label">PENDAPATAN BERSIH HARI INI</div><div class="hero-value" id="heroIncome">Rp0</div><div class="hero-note" id="heroNetNote">Total pemasukan dikurangi seluruh pengeluaran hari ini</div></header>
 <main>
 <section id="dashboard" class="panel active">
  <div class="section-head"><h2>Ringkasan aktivitas</h2><span class="muted" id="dashRange">Hari ini</span></div>
@@ -155,4 +155,48 @@ function download(blob,name){let a=document.createElement('a');a.href=URL.create
 function importData(e){let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!Array.isArray(x.orders)||!Array.isArray(x.expenses))throw Error();if(confirm('Ganti seluruh data saat ini dengan data cadangan?')){db=x;save();alert('Data berhasil diimpor.')}}catch(err){alert('File cadangan tidak valid.')}e.target.value=''};r.readAsText(f)}
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 render();
+
+function updateClock(){
+ const now=new Date();
+ document.getElementById('liveClock').textContent=now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+ document.getElementById('todayDate').textContent=now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+updateClock();setInterval(updateClock,1000);
+
+const weatherText={
+ 0:['Cerah','☀️'],1:['Cerah berawan','🌤️'],2:['Berawan sebagian','⛅'],3:['Mendung','☁️'],
+ 45:['Berkabut','🌫️'],48:['Kabut tebal','🌫️'],51:['Gerimis ringan','🌦️'],53:['Gerimis','🌦️'],55:['Gerimis lebat','🌧️'],
+ 56:['Gerimis beku ringan','🌧️'],57:['Gerimis beku lebat','🌧️'],61:['Hujan ringan','🌦️'],63:['Hujan sedang','🌧️'],65:['Hujan lebat','🌧️'],
+ 66:['Hujan beku ringan','🌧️'],67:['Hujan beku lebat','🌧️'],71:['Salju ringan','🌨️'],73:['Salju sedang','🌨️'],75:['Salju lebat','❄️'],
+ 77:['Butiran salju','🌨️'],80:['Hujan lokal ringan','🌦️'],81:['Hujan lokal sedang','🌧️'],82:['Hujan lokal lebat','⛈️'],
+ 85:['Hujan salju ringan','🌨️'],86:['Hujan salju lebat','❄️'],95:['Badai petir','⛈️'],96:['Badai petir dan hujan es','⛈️'],99:['Badai petir kuat','⛈️']
+};
+async function loadWeather(){
+ const temp=document.getElementById('weatherTemp'),detail=document.getElementById('weatherDetail'),place=document.getElementById('weatherLocation'),icon=document.getElementById('weatherIcon');
+ if(!('geolocation' in navigator)){temp.textContent='Lokasi tidak didukung';detail.textContent='Browser tidak menyediakan akses lokasi.';return}
+ temp.textContent='Meminta izin lokasi…';
+ navigator.geolocation.getCurrentPosition(async pos=>{
+  try{
+   const {latitude,longitude}=pos.coords;
+   const url=`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=auto`;
+   const response=await fetch(url);
+   if(!response.ok)throw Error('Cuaca tidak tersedia');
+   const data=await response.json(),c=data.current;
+   const [label,emoji]=weatherText[c.weather_code]||['Kondisi cuaca terkini','🌡️'];
+   icon.textContent=emoji;temp.textContent=`${Math.round(c.temperature_2m)}°C · ${label}`;
+   detail.textContent=`Terasa ${Math.round(c.apparent_temperature)}°C · Kelembapan ${Math.round(c.relative_humidity_2m)}% · Angin ${Math.round(c.wind_speed_10m)} km/jam`;
+   try{
+    const rev=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`);
+    if(rev.ok){const rd=await rev.json(),a=rd.address||{};place.textContent=[a.suburb||a.village||a.town||a.city_district,a.city||a.county||a.state].filter(Boolean).join(', ')}
+   }catch(e){place.textContent='Lokasi GPS aktif'}
+   if(!place.textContent)place.textContent='Lokasi GPS aktif';
+  }catch(e){temp.textContent='Cuaca belum tersedia';detail.textContent='Periksa koneksi internet lalu muat ulang aplikasi.'}
+ },err=>{
+  temp.textContent='Lokasi belum diizinkan';
+  detail.textContent='Izinkan akses lokasi di browser agar cuaca sesuai posisi Anda.';
+  place.textContent='Cuaca lokal memerlukan izin GPS';
+ },{enableHighAccuracy:true,timeout:15000,maximumAge:300000});
+}
+loadWeather();
+
 </script></body></html>

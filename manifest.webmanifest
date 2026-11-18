@@ -1,12 +1,12 @@
 {
-  "name": "Driver Tracker - inDrive Edition",
-  "short_name": "Driver Tracker",
+  "name": "inDrive Edition by Fahmi Rizky Fauzi",
+  "short_name": "inDrive Edition",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f4",
   "theme_color": "#10271f",
-  "description": "Catatan order, pendapatan, tips dan pengeluaran driver.",
+  "description": "Dashboard pencatat order, pendapatan, cuaca dan aktivitas driver.",
   "icons": [
     {
       "src": "./icon-192.png",
